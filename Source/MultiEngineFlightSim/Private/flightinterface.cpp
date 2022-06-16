@@ -211,8 +211,8 @@ void Aflightinterface::targetLocationLock()
 
 
 
-   UE_LOG(LogTemp, Warning, /*TEXT("XR: %f"),*/ TEXT("%f"), CurrentpercentStepSizeY);
-   UE_LOG(LogTemp, Warning, /*TEXT("XR: %f"),*/ TEXT("%f"), tempstate);
+   //UE_LOG(LogTemp, Warning, /*TEXT("XR: %f"),*/ TEXT("%f"), CurrentpercentStepSizeY);
+   //UE_LOG(LogTemp, Warning, /*TEXT("XR: %f"),*/ TEXT("%f"), tempstate);
    // SIDE THRUSTERS
 
    sideThrustersSidePercentDistribution(tempstate /* Positive percent means craft moves from left-->Right. */, .01);
@@ -251,11 +251,19 @@ void Aflightinterface::targetLocationLock()
    //TODO Pitch Equalizer Between the two thrusters
    //pitchLockStabilization(FlightData->xAxisAngle, 0, allotedThrustPoolToBeUsedtoStabilize, .01);
 
+/***********************************************************************************
+* UPDATE DEBUG CODE
+***********************************************************************************/
 
 
+   FlightData->xAxisThrust = alloted_X_Axis_PercentThrust;
 
+   FlightData->yAxisThrust = tempstate;
 
+   FlightData->zAxisThrust = alloted_Z_Axis_PercentThrust;
 
+   FlightData->worldSpaceRotationQuat = UKismetMathLibrary::Conv_RotatorToQuaternion(this->parentMesh->GetRelativeRotation());
+// END UPDATE DEBUG CODE
 }
 
 
@@ -537,18 +545,23 @@ void Aflightinterface::parentMeshAxisValues(USceneComponent* targetMeshToAnalyze
      //    "ZR: " + FString::SanitizeFloat(targetMeshFlightData->zAxisRotationVelocity, 5);
      //UE_LOG(LogTemp, Warning, /*TEXT("XR: %f"),*/ TEXT("%s"), *output);
 
+
      //FString output =
      //   "XR: " + FString::SanitizeFloat(targetMeshFlightData->xAxisAngle, 5) +
      //   "YR: " + FString::SanitizeFloat(targetMeshFlightData->yAxisAngle, 5) +
      //   "ZR: " + FString::SanitizeFloat(targetMeshFlightData->zAxisAngle, 5);
      //UE_LOG(LogTemp, Warning, /*TEXT("XR: %f"),*/ TEXT("%s"), *output);
 
+
       FString output =
         "XR: " + FString::SanitizeFloat(FlightData->xAxisAcceleration, 5) +
         "YR: " + FString::SanitizeFloat(FlightData->yAxisAcceleration, 5) +
         "ZR: " + FString::SanitizeFloat(FlightData->zAxisAcceleration, 5);
      //UE_LOG(LogTemp, Warning, /*TEXT("XR: %f"),*/ TEXT("%s"), *output);
-
+     // 
+     // 
+     // DEBUG OUTPUT
+     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
    }

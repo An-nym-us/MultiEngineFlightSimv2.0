@@ -146,6 +146,14 @@ struct FflightData
       float zAxisAcceleration;
 
 
+   UPROPERTY(BlueprintReadOnly, Category = "Debug Flight Data ")
+      float xAxisThrust;
+   UPROPERTY(BlueprintReadOnly, Category = "Debug Flight Data ")
+      float yAxisThrust;
+   UPROPERTY(BlueprintReadOnly, Category = "Debug Flight Data ")
+      float zAxisThrust;
+
+
 
 
    UPROPERTY(BlueprintReadOnly, Category = "Flight Data ")
