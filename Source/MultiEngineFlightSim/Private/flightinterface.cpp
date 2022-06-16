@@ -48,6 +48,17 @@ void Aflightinterface::SystemSyncedTick()
 
 
 
+// USed for debug test to change target location mid-flight
+void Aflightinterface::changeTargetFlightLoction(FVector new_target_Lock_Location)
+{
+   if (!TargetSession)
+      return;
+
+   TargetSession->targetLocationLock = new_target_Lock_Location;
+
+   
+
+}
 
 void Aflightinterface::targetLocationLock()
 {

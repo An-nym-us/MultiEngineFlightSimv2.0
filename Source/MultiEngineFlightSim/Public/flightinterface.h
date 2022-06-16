@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "../ExternalFiles/psocpp.h"
+//#include "../ExternalFiles/psocpp.h"   <===NEED TO FIX LATER TODO
 
 
 #include "CoreMinimal.h"
@@ -242,7 +242,7 @@ public:
 
 
    /************************************/
-   //SCOPED STRCUT DATA
+   //SCOOPED STRCUT DATA
 
 
 
@@ -254,15 +254,14 @@ public:
       int32 returned_Roll;
    UPROPERTY(BlueprintReadWrite, EditAnywhere)
       int64 returned_Altitude;
-   UPROPERTY(BlueprintReadWrite, EditAnywhere)
-      int64 returned_Elivation;
+
 
 
 
    UPROPERTY(BlueprintCallable, BlueprintAssignable)
       FNeewTypeDelgate myNewDelegate;
 
-
+   
 
 
 
@@ -354,7 +353,7 @@ public:
 
 
 
-   /* THRUSTERS LINKER SYSTEMS */
+   /* START THRUSTERS LINKER SYSTEMS */
 
    UPROPERTY(EditAnywhere, BlueprintReadWrite)
       AthrusterLinker* singleFrontModule;
@@ -375,10 +374,11 @@ public:
    UPROPERTY(BlueprintReadWrite, EditAnywhere)
       AthrusterLinker* frontLeftMainThruster;
 
-   /* THRUSTERS LINKER SYSTEMS */
+   /* END THRUSTERS LINKER SYSTEMS */
 
 
 
+   /* CREATE ACTOR ENGINE OBJECTS */
    AActor* frontRightEngineActor = nullptr;
    AActor* frontLeftEngineActor = nullptr;
    AActor* upperRearRightEngineActor = nullptr;
@@ -388,11 +388,14 @@ public:
 
 
 
-   //TSharedRef<Aflightinterface, ESPMode::ThreadSafe> testpointer;
 
+
+
+   // STRUCTS FOR DEFAULT AND TARGET SESSION VALUES
    FflightData* FlightData; // flight data stuct dec
    FFlightPathAggressionTemplate* FlightPathAggressionStruct;
    FTargetSessionValues* TargetSession;  // <==== NEED TO EXPOSE TO BLUEPRINTS
+
 
 
    UFUNCTION(BlueprintCallable, Category = "Debug")
@@ -403,6 +406,11 @@ public:
 
    UFUNCTION(BlueprintCallable, Category = "Debug")
       FTargetSessionValues getFlightSessionValues() { return *TargetSession; }
+
+
+   UFUNCTION(BlueprintCallable, Category = "Debug")
+      void changeTargetFlightLoction(FVector new_target_Lock_Location);
+
 
 
 private:
