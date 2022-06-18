@@ -24,8 +24,10 @@ Developed with Unreal Engine 5
 # Useful Websites
 
 {Make a list of websites that you found helpful in this project}
-* [Web Site Name](http://url.link.goes.here)
-* [Web Site Name](http://url.link.goes.here)
+* [Unreal Engine C++ API](https://docs.unrealengine.com/5.0/en-US/API/)
+* [GameDev](https://www.gamedev.tv/)
+* [Quaternion] (https://en.wikipedia.org/wiki/Quaternion)
+* [Kinematics](https://www.khanacademy.org/science/physics/one-dimensional-motion/kinematic-formulas/a/what-are-the-kinematic-formulas)
 
 # Future Work
 
