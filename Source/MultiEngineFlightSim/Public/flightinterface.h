@@ -26,6 +26,8 @@
 #include "AssetRegistryModule.h"
 #include "Kismet/GameplayStatics.h"
 #include "Containers/Array.h"
+#include "Math/Transform.h"
+
 
 
 
@@ -100,13 +102,15 @@ struct FTargetSessionValues
       float rearLowerLeftEnginePercentPitch = 70;
    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Allowed DeadSpace Values")
       float RearLowerRightEnginePercentPitch = 70;
-
+   // Engine Data 
 
 
    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Target LOCk Loaction")
       FVector targetLocationLock = FVector(0.0f, 0.0f, 0.0f);
 
 };
+
+
 
 
 USTRUCT(BlueprintType)
@@ -155,11 +159,30 @@ struct FflightData
 
 
 
-
+   // Depreciated
    UPROPERTY(BlueprintReadOnly, Category = "Flight Data ")
       FVector worldSpaceLocation = FVector(0.0f, 0.0f, 0.0f);
    UPROPERTY(BlueprintReadOnly, Category = "Flight Data ")
       FQuat worldSpaceRotationQuat = FQuat(0.0f, 0.0f, 0.0f, 0.0f);
+   // Depreciated
+
+
+   UPROPERTY(BlueprintReadOnly, Category = "Flight Data ")
+      FVector targetUniverseLocation = FVector(0.0f, 0.0f, 0.0f);
+   UPROPERTY(BlueprintReadOnly, Category = "Flight Data ")
+      FRotator targetUniverseRotationAxis = FRotator(0.0f, 0.0f, 0.0f);
+
+
+   UPROPERTY(BlueprintReadOnly, Category = "Flight Data ")
+      FVector currentUniverseShipLocation = FVector(0.0f, 0.0f, 0.0f);
+   UPROPERTY(BlueprintReadOnly, Category = "Flight Data ")
+      FRotator currentUniverseShipRotationAxis = FRotator(0.0f, 0.0f, 0.0f);
+
+
+   UPROPERTY(BlueprintReadOnly, Category = "Flight Data ")
+      FRotator currentShipHorizionRotationAxis = FRotator(0.0f, 0.0f, 0.0f);
+
+
 
 
    // NOT TO BE USED IN FINAL CODE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -214,7 +237,7 @@ struct FFlightPathAggressionTemplate
     */
 
    UPROPERTY(BlueprintReadOnly, Category = "Distnace to Zero Target Point")
-      float StartUpperBoundDistance;
+      float startDeaccelerationDistance;
    // Target velocity == 0
    // Target Location == 0
 
@@ -271,6 +294,9 @@ public:
 
    
 
+
+   UFUNCTION(BlueprintCallable, Category = "Init")
+      void bindDebugRefreceTargetAxis(USceneComponent* ShipRefAxis, USceneComponent* targetTargetWorldAxis);
 
 
 
@@ -438,6 +464,12 @@ private:
    // Directional Lock Systems Moduels
    void targetLocationLock();      // WIP
 
+
+   void synchronizeTargetAxisAndShipAxis();
+
+
+
+
    // Rotational Lock system Moduels
    void pitchLockStabilization(float current_craft_pitch, float target_craft_pitch, float allotted_thrust_percentage,  float alloted_DeadSpace);      // TODO
    void rollLockStabilization();    // TODO
@@ -446,8 +478,18 @@ private:
    // Lock To Target Acceleration
    float setTargetAcceleration_Axis_PercentStepSize(float target_Acceleration, float current_Acceleration, const float aggression_Curve /* Lower is smoother but slower */ , float const allowed_DeadSpace); // Complete
 
+
+
    // Find Deceleration Fucntion
    float getTargetAccelerationBasedOnGoalWorldLocation(float current_Velocity, float target_Z_Axis_Goal, float craft_Current_Location, float Asked_Time_To_Stop); // Complete
+   FVector getTargetAccelerationBasedOnGoalWorldLocationVECTOR(FVector current_Velocity, FVector Target_Goal, FVector Current_Loaction, FRotator Current_Torationfloat, float Asked_Time_To_Stop, float startDeaccelerationDistance);
+
+
+   FVector setTargetAcceleration_AccelerationBasedOnGoalRelitaveLoction
+   (FVector current_Velocity_On_Relative_Axis,
+      FVector target_World_goal,
+      FVector craft_Current_World_Space_Location,
+      FVector requested_Time_To_Stop_Per_Axis);
 
 
 
@@ -466,6 +508,9 @@ private:
    AneuralNetworkOptimization* NNO;
 
    USceneComponent* parentMesh;
+   USceneComponent* shipsCurrentAxis;
+   USceneComponent* worldCurrnetRefTargetAxis;
+
 
    AActor* objectOwner; // Who owns Parent Mesh
 
