@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "flightinterface.h"
+#include "../../../../../../../../Program Files/Epic Games/UE_5.0/Engine/Source/Runtime/Engine/Classes/Kismet/KismetMathLibrary.h"
 
 
 // Sets default values
@@ -107,7 +108,9 @@ void Aflightinterface::targetLocationLock()
 
    // Ignore this stuff Debuig Only ============================================================================
    FlightData->Debug_X_Axis_Current_Offset = FlightData->worldSpaceLocation.X - TargetSession->targetLocationLock.X;
+
    FlightData->Debug_Y_Axis_Current_Offset = FlightData->worldSpaceLocation.Y - TargetSession->targetLocationLock.Y;
+
    FlightData->Debug_Z_Axis_Current_Offset = FlightData->worldSpaceLocation.Z - TargetSession->targetLocationLock.Z;
    // Ignore this stuff Debuig Only ============================================================================
 
@@ -265,6 +268,8 @@ void Aflightinterface::targetLocationLock()
    FlightData->worldSpaceRotationQuat = UKismetMathLibrary::Conv_RotatorToQuaternion(this->parentMesh->GetRelativeRotation());
 // END UPDATE DEBUG CODE
 }
+
+
 
 
 float Aflightinterface::getTargetAccelerationBasedOnGoalWorldLocation(float current_Velocity, float Target_Goal, float Current_Loaction, float Asked_Time_To_Stop)
