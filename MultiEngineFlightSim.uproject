@@ -43,6 +43,11 @@
 			"Name": "InteractML",
 			"Enabled": true,
 			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/1217f5d62b7442f3bbdf2ed07bd71a60"
+		},
+		{
+			"Name": "DirGravity",
+			"Enabled": true,
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/1e8883ab1e2f44f0984006d4ab67acd4"
 		}
 	]
 }
