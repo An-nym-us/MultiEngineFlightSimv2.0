@@ -292,6 +292,8 @@ FVector Aflightinterface::getTargetAccelerationBasedOnGoalWorldLocationVECTOR(FV
    float OutAccelerationZ = 0;
 
 
+
+
    if (tempOffsetDistance.X > startDeaccelerationDistance)
    {
       float numeratorZ = tempOffsetDistance.X - (current_Velocity.X * Asked_Time_To_Stop);
@@ -313,8 +315,6 @@ FVector Aflightinterface::getTargetAccelerationBasedOnGoalWorldLocationVECTOR(FV
       float lol2 = UKismetMathLibrary::Square(current_Velocity.X + velocity_Dead_Space);
       OutAccelerationZ = UKismetMathLibrary::SafeDivide(lol2, lol);
    }
-
-
 
    if (tempOffsetDistance.Y > startDeaccelerationDistance)
    {
@@ -340,12 +340,35 @@ FVector Aflightinterface::getTargetAccelerationBasedOnGoalWorldLocationVECTOR(FV
 
 
 
+   /*
+   * if (craft is below target)
+   * {
+   *     accelerate to target, reduce velocity to zero
+   * }
+   * else if (craft is above target) 
+   * {
+   *  accelerate to target, reduce velocity to zero
+   * }
+   */
+
+   float zAxissVeloity = current_Velocity.Z;
+   float zAzisOffest = tempOffsetDistance.Z;
+   float zAxisAskedTimetoStop = Asked_Time_To_Stop;
+
+
+
+
+
+
+
+
+
+
+   /*********************************************************************************/
    if (tempOffsetDistance.Z > startDeaccelerationDistance)
    {
       float numeratorZ = tempOffsetDistance.Z - (current_Velocity.Z * Asked_Time_To_Stop);
-
       float denominatorZ = .5 * UKismetMathLibrary::Square(Asked_Time_To_Stop);
-
       OutAccelerationZ = UKismetMathLibrary::SafeDivide(numeratorZ, denominatorZ);
    }
    else if (tempOffsetDistance.Z <= startDeaccelerationDistance && tempOffsetDistance.Z > 0)
@@ -367,25 +390,12 @@ FVector Aflightinterface::getTargetAccelerationBasedOnGoalWorldLocationVECTOR(FV
 
 
 
-   /*********************************************************************************/
-   //float numeratorY = tempOffsetDistance.Y - (current_Velocity.Y * Asked_Time_To_Stop);
-   //float denominatorY = .5 * UKismetMathLibrary::Square(Asked_Time_To_Stop);
 
-   //float tempStateY = UKismetMathLibrary::SafeDivide(numeratorY, denominatorY);
-
-
-
-   //float numeratorZ = tempOffsetDistance.Z - (current_Velocity.Z * Asked_Time_To_Stop);
-   //float denominatorZ = .5 * UKismetMathLibrary::Square(Asked_Time_To_Stop);
-
-   //float tempStateZ = UKismetMathLibrary::SafeDivide(numeratorZ, denominatorZ);
 
 
 
 
    return FVector(OutAccelerationX, OutAccelerationY, OutAccelerationZ);
-
-
 
 }
 
