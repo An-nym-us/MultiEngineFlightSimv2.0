@@ -1,7 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "flightinterface.h"
-#include "../../../../../../../../Program Files/Epic Games/UE_5.0/Engine/Source/Runtime/Engine/Classes/Kismet/KismetMathLibrary.h"
 
 
 // Sets default values
@@ -15,6 +14,7 @@ Aflightinterface::Aflightinterface(const FObjectInitializer& ObjectInitializer)
    TargetSession = new FTargetSessionValues();
 
    // Testing target values for session. Default Values
+    
    TargetSession->targetLocationLock.X = 600;
    TargetSession->targetLocationLock.Y = -7000;
    TargetSession->targetLocationLock.Z = 2500;
@@ -41,6 +41,7 @@ void Aflightinterface::SystemSyncedTick()
 { 
     parentMeshAxisValues(parentMesh);
     targetLocationLock();
+    synchronizeTargetAxisAndShipAxis();
 
     //Test
 
@@ -64,8 +65,6 @@ void Aflightinterface::changeTargetFlightLoction(FVector new_target_Lock_Locatio
 void Aflightinterface::targetLocationLock()
 {
    //Useful data to look at   
-   FlightData->zAxisAcceleration;
-   FlightData->zAxisVelocity;
    float stepside = .01;
    float deadSpace = .01;
 
@@ -82,9 +81,7 @@ void Aflightinterface::targetLocationLock()
 
    FlightPathAggressionStruct->MaxVelocityLowerBound = 20;
    FlightPathAggressionStruct->MaxAccelerationLowerBound = 100;
-
-
-   FlightPathAggressionStruct->StartUpperBoundDistance = 1000;
+   FlightPathAggressionStruct->startDeaccelerationDistance = 100;
 
 
 
@@ -101,17 +98,15 @@ void Aflightinterface::targetLocationLock()
    *     Target Acceleration To Stop = (Distance - Velocity_inital * TIME) / (.5 * (TIME ^ 2))
    * 
    * Accleeration needed to stop will be a goal based function. seeing that the craft
-   * will always have a verying weight, the system will have to guess and check its 
+   * will always have a verying weight, the system will have to guess and check its result
    * 
    ***********************************************************************************/
 
 
    // Ignore this stuff Debuig Only ============================================================================
-   FlightData->Debug_X_Axis_Current_Offset = FlightData->worldSpaceLocation.X - TargetSession->targetLocationLock.X;
-
-   FlightData->Debug_Y_Axis_Current_Offset = FlightData->worldSpaceLocation.Y - TargetSession->targetLocationLock.Y;
-
-   FlightData->Debug_Z_Axis_Current_Offset = FlightData->worldSpaceLocation.Z - TargetSession->targetLocationLock.Z;
+   FlightData->Debug_X_Axis_Current_Offset = shipsCurrentAxis->GetComponentLocation().X - worldCurrnetRefTargetAxis->GetComponentLocation().X;
+   FlightData->Debug_Y_Axis_Current_Offset = shipsCurrentAxis->GetComponentLocation().Y - worldCurrnetRefTargetAxis->GetComponentLocation().Y;
+   FlightData->Debug_Z_Axis_Current_Offset = shipsCurrentAxis->GetComponentLocation().Z - worldCurrnetRefTargetAxis->GetComponentLocation().Z;
    // Ignore this stuff Debuig Only ============================================================================
 
 
@@ -124,10 +119,11 @@ void Aflightinterface::targetLocationLock()
    float sendTempAcceleratonZ;
    float Asked_Time_To_Stop = 3; // In Seconds
 
-   float targetMaxAcceleration = 100;
+   float targetMaxAcceleration = 50;
+   float targetMaxAcceleration2 = 50;
 
  /************************************************************************************
-*EACH TARGET AXIS ACCELERATION  IS INDEPENDENT TO THE ORIENTATION OF THE CRAFT!!!!
+* EACH TARGET AXIS ACCELERATION  IS INDEPENDENT TO THE ORIENTATION OF THE CRAFT!!!!
 * This value will be used in future itterations of the program. Because the crafts 
 * orentation is indepeneted of teh target Axis world locations, it does not 
 * matter what way the craft is facing, As long as it maintains this axis 
@@ -136,19 +132,46 @@ void Aflightinterface::targetLocationLock()
 
    // This is the BIG BIG BRAINS of the Gaia system. This will get the crafts acceleration (either Positive or Negative) Neededd too reach its new target location.
    // As stated this is independent to orenttation, and is only axis based. 
-   float TARGET_X_AXIS_ACCELERATION = getTargetAccelerationBasedOnGoalWorldLocation(FlightData->xAxisVelocity, TargetSession->targetLocationLock.X, FlightData->worldSpaceLocation.X, Asked_Time_To_Stop);
-   float TARGET_Y_AXIS_ACCELERATION = getTargetAccelerationBasedOnGoalWorldLocation(FlightData->yAxisVelocity, TargetSession->targetLocationLock.Y, FlightData->worldSpaceLocation.Y, Asked_Time_To_Stop);
-   float TARGET_Z_AXIS_ACCELERATION = getTargetAccelerationBasedOnGoalWorldLocation(FlightData->zAxisVelocity, TargetSession->targetLocationLock.Z, FlightData->worldSpaceLocation.Z, Asked_Time_To_Stop);
+   //float TARGET_X_AXIS_ACCELERATION = getTargetAccelerationBasedOnGoalWorldLocation(FlightData->xAxisVelocity, TargetSession->targetLocationLock.X, FlightData->worldSpaceLocation.X, Asked_Time_To_Stop);
+   //float TARGET_Y_AXIS_ACCELERATION = getTargetAccelerationBasedOnGoalWorldLocation(FlightData->yAxisVelocity, TargetSession->targetLocationLock.Y, FlightData->worldSpaceLocation.Y, Asked_Time_To_Stop);
+  // float TARGET_Z_AXIS_ACCELERATION = getTargetAccelerationBasedOnGoalWorldLocation(FlightData->zAxisVelocity, TargetSession->targetLocationLock.Z, FlightData->worldSpaceLocation.Z, Asked_Time_To_Stop);
 
+
+
+
+   FVector TargetAccelerationVector = getTargetAccelerationBasedOnGoalWorldLocationVECTOR
+   (
+      FVector
+      (
+         FlightData->xAxisVelocity,
+         FlightData->yAxisVelocity, 
+         FlightData->zAxisVelocity
+      ),
+      worldCurrnetRefTargetAxis->GetComponentLocation(), 
+      shipsCurrentAxis->GetComponentLocation(), 
+      parentMesh->GetComponentRotation(), 
+      Asked_Time_To_Stop,
+      FlightPathAggressionStruct->startDeaccelerationDistance
+   );
    
+   
+   float TARGET_X_AXIS_ACCELERATION = TargetAccelerationVector.X;
+   float TARGET_Y_AXIS_ACCELERATION = TargetAccelerationVector.Y;
+   float TARGET_Z_AXIS_ACCELERATION = TargetAccelerationVector.Z;
+
+
 
    // Orentation does not matter FOR NOW!!!!
    // X-axis
-   sendTempAcceleratonX = UKismetMathLibrary::FClamp(TARGET_X_AXIS_ACCELERATION, (targetMaxAcceleration * -1), targetMaxAcceleration);
+   sendTempAcceleratonX = UKismetMathLibrary::FClamp(TARGET_X_AXIS_ACCELERATION, (targetMaxAcceleration2 * -1), targetMaxAcceleration2);
+
+
    float CurrentpercentStepSizeX = setTargetAcceleration_Axis_PercentStepSize(sendTempAcceleratonX, FlightData->xAxisAcceleration, .01 /* Lower is smoother but slower */, .1);   // Acceleration Control // System Fucntions Corrently   :D <-- Happy face!
    
    // Y-axis
    sendTempAcceleratonY = UKismetMathLibrary::FClamp(TARGET_Y_AXIS_ACCELERATION, (targetMaxAcceleration * -1), targetMaxAcceleration);
+
+
    float CurrentpercentStepSizeY = setTargetAcceleration_Axis_PercentStepSize(sendTempAcceleratonY, FlightData->yAxisAcceleration, .6 /* Lower is smoother but slower */, .1);   // Acceleration Control // System Fucntions Corrently   :D <-- Happy face!
 
 
@@ -172,17 +195,7 @@ void Aflightinterface::targetLocationLock()
 
 
 
-   //float currentY_Axis_AverageStepSize = UKismetMathLibrary::SafeDivide
-   //((
-   //   frontRightMainThruster->getCurrentPushSideThrusterStrength() +
-   //   upperRearRightMainThruster->getCurrentPushSideThrusterStrength() +
-   //   lowerRearRightMainThruster->getCurrentPushSideThrusterStrength() +
-   //   frontLeftMainThruster->getCurrentPushSideThrusterStrength() +
-   //   upperRearLeftMainThruster->getCurrentPushSideThrusterStrength() +
-   //   lowerRearLeftMainThruster->getCurrentPushSideThrusterStrength())
-   //   ,
-   //   3
-   //);
+
       
    float currentY_Axis_AverageStepSize = (frontRightMainThruster->getCurrentPushSideThrusterStrength() + frontLeftMainThruster->getCurrentPushSideThrusterStrength() );
    //currentY_Axis_AverageStepSize = UKismetMathLibrary::FClamp(currentY_Axis_AverageStepSize, -100, 100); // First Derective Clamp thrust output.
@@ -218,13 +231,11 @@ void Aflightinterface::targetLocationLock()
    //UE_LOG(LogTemp, Warning, /*TEXT("XR: %f"),*/ TEXT("%f"), tempstate);
    // SIDE THRUSTERS
 
+
+
+
+
    sideThrustersSidePercentDistribution(tempstate /* Positive percent means craft moves from left-->Right. */, .01);
-
-
-
-
-
-
 
    singleFrontModule->setForwardReverseThrusterStrength(alloted_Z_Axis_PercentThrust);
    singleRearModule->setForwardReverseThrusterStrength(alloted_Z_Axis_PercentThrust);
@@ -237,7 +248,6 @@ void Aflightinterface::targetLocationLock()
    frontRightMainThruster->setForwardReverseThrusterStrength(alloted_X_Axis_PercentThrust);
    upperRearRightMainThruster->setForwardReverseThrusterStrength(alloted_X_Axis_PercentThrust);
    lowerRearRightMainThruster->setForwardReverseThrusterStrength(alloted_X_Axis_PercentThrust);
-
 
    // Life Side of Ship
    frontLeftMainThruster->setForwardReverseThrusterStrength(alloted_X_Axis_PercentThrust);
@@ -254,6 +264,7 @@ void Aflightinterface::targetLocationLock()
    //TODO Pitch Equalizer Between the two thrusters
    //pitchLockStabilization(FlightData->xAxisAngle, 0, allotedThrustPoolToBeUsedtoStabilize, .01);
 
+
 /***********************************************************************************
 * UPDATE DEBUG CODE
 ***********************************************************************************/
@@ -265,13 +276,131 @@ void Aflightinterface::targetLocationLock()
 
    FlightData->zAxisThrust = alloted_Z_Axis_PercentThrust;
 
-   FlightData->worldSpaceRotationQuat = UKismetMathLibrary::Conv_RotatorToQuaternion(this->parentMesh->GetRelativeRotation());
+   FlightData->worldSpaceRotationQuat = UKismetMathLibrary::Conv_RotatorToQuaternion(this->parentMesh->GetComponentRotation());
 // END UPDATE DEBUG CODE
 }
 
 
+FVector Aflightinterface::getTargetAccelerationBasedOnGoalWorldLocationVECTOR(FVector current_Velocity, FVector Target_Goal, FVector Current_Loaction, FRotator Current_Rotation, float Asked_Time_To_Stop, float startDeaccelerationDistance)
+{
+   float velocity_Dead_Space = .001;
+
+   FVector tempOffsetDistance = UKismetMathLibrary::LessLess_VectorRotator(Target_Goal, Current_Rotation) - UKismetMathLibrary::LessLess_VectorRotator(Current_Loaction, Current_Rotation);
+
+   float OutAccelerationX = 0;
+   float OutAccelerationY = 0;
+   float OutAccelerationZ = 0;
 
 
+
+
+   if (tempOffsetDistance.X > startDeaccelerationDistance)
+   {
+      float numeratorZ = tempOffsetDistance.X - (current_Velocity.X * Asked_Time_To_Stop);
+
+      float denominatorZ = .5 * UKismetMathLibrary::Square(Asked_Time_To_Stop);
+
+      OutAccelerationZ = UKismetMathLibrary::SafeDivide(numeratorZ, denominatorZ);
+   }
+   else if (tempOffsetDistance.X <= startDeaccelerationDistance && tempOffsetDistance.X > 0)
+   {
+      float lol = tempOffsetDistance.X * 2;
+      float lol2 = UKismetMathLibrary::Square(current_Velocity.X + velocity_Dead_Space) * -1;
+      OutAccelerationZ = UKismetMathLibrary::SafeDivide(lol2, lol);
+
+   }
+   else if (tempOffsetDistance.X <= startDeaccelerationDistance && tempOffsetDistance.X < 0)
+   {
+      float lol = tempOffsetDistance.X * 2;
+      float lol2 = UKismetMathLibrary::Square(current_Velocity.X + velocity_Dead_Space);
+      OutAccelerationZ = UKismetMathLibrary::SafeDivide(lol2, lol);
+   }
+
+   if (tempOffsetDistance.Y > startDeaccelerationDistance)
+   {
+      float numeratorZ = tempOffsetDistance.Y - (current_Velocity.Y * Asked_Time_To_Stop);
+
+      float denominatorZ = .5 * UKismetMathLibrary::Square(Asked_Time_To_Stop);
+
+      OutAccelerationZ = UKismetMathLibrary::SafeDivide(numeratorZ, denominatorZ);
+   }
+   else if (tempOffsetDistance.Y <= startDeaccelerationDistance && tempOffsetDistance.Y > 0)
+   {
+      float lol = tempOffsetDistance.Y * 2;
+      float lol2 = UKismetMathLibrary::Square(current_Velocity.Y + velocity_Dead_Space) * -1;
+      OutAccelerationZ = UKismetMathLibrary::SafeDivide(lol2, lol);
+
+   }
+   else if (tempOffsetDistance.Y <= startDeaccelerationDistance && tempOffsetDistance.Y < 0)
+   {
+      float lol = tempOffsetDistance.Y * 2;
+      float lol2 = UKismetMathLibrary::Square(current_Velocity.Y + velocity_Dead_Space);
+      OutAccelerationZ = UKismetMathLibrary::SafeDivide(lol2, lol);
+   }
+
+
+
+   /*
+   * if (craft is below target)
+   * {
+   *     accelerate to target, reduce velocity to zero
+   * }
+   * else if (craft is above target) 
+   * {
+   *  accelerate to target, reduce velocity to zero
+   * }
+   */
+
+   float zAxissVeloity = current_Velocity.Z;
+   float zAzisOffest = tempOffsetDistance.Z;
+   float zAxisAskedTimetoStop = Asked_Time_To_Stop;
+
+
+
+
+
+
+
+
+
+
+   /*********************************************************************************/
+   if (tempOffsetDistance.Z > startDeaccelerationDistance)
+   {
+      float numeratorZ = tempOffsetDistance.Z - (current_Velocity.Z * Asked_Time_To_Stop);
+      float denominatorZ = .5 * UKismetMathLibrary::Square(Asked_Time_To_Stop);
+      OutAccelerationZ = UKismetMathLibrary::SafeDivide(numeratorZ, denominatorZ);
+   }
+   else if (tempOffsetDistance.Z <= startDeaccelerationDistance && tempOffsetDistance.Z > 0)
+   {
+      float lol = tempOffsetDistance.Z * 2;
+      float lol2 = UKismetMathLibrary::Square(current_Velocity.Z + velocity_Dead_Space) * -1;
+      OutAccelerationZ = UKismetMathLibrary::SafeDivide(lol2, lol);
+
+   }
+   else if (tempOffsetDistance.Z <= startDeaccelerationDistance && tempOffsetDistance.Z < 0)
+   {
+      float lol = tempOffsetDistance.Z * 2;
+      float lol2 = UKismetMathLibrary::Square(current_Velocity.Z + velocity_Dead_Space);
+      OutAccelerationZ = UKismetMathLibrary::SafeDivide(lol2, lol);
+   }
+
+
+
+
+
+
+
+
+
+
+
+   return FVector(OutAccelerationX, OutAccelerationY, OutAccelerationZ);
+
+}
+
+
+//Depreciated
 float Aflightinterface::getTargetAccelerationBasedOnGoalWorldLocation(float current_Velocity, float Target_Goal, float Current_Loaction, float Asked_Time_To_Stop)
 {
    /***********************************************************************************
@@ -294,6 +423,9 @@ float Aflightinterface::getTargetAccelerationBasedOnGoalWorldLocation(float curr
 
 
    float tempOffsetDistance = Target_Goal - Current_Loaction;
+   //UE_LOG(LogTemp, Warning, /*TEXT("XR: %f"),*/ TEXT("%f"), current_Velocity);
+
+
 
    float numerator = tempOffsetDistance - (current_Velocity * Asked_Time_To_Stop);
    float denominator = .5 * UKismetMathLibrary::Square(Asked_Time_To_Stop);
@@ -350,7 +482,109 @@ float Aflightinterface::setTargetAcceleration_Axis_PercentStepSize(float target_
    }
 }
 
+/***********************************************************************************
+* STATUS ===== COMPLETE
+***********************************************************************************/
+/*
+*   Will return a positave or negitive step size.'
+*   Acceleration is in cm/Per Second.
+*/
 
+FVector Aflightinterface::setTargetAcceleration_AccelerationBasedOnGoalRelitaveLoction(FVector current_Velocity_On_Relative_Axis, FVector target_World_goal, FVector craft_Current_World_Space_Location, FVector requested_Time_To_Stop_Per_Axis)
+{
+   /***********************************************************************************
+   * Goal --->
+   * Get craft to a target velocity of Zero and to Target stop point
+   *
+   * USING --->
+   *  EQUAATION
+   *     {Solve for acceleleration}
+   *     d = (Velocity_inital * TIME) + (.5 * Target Acceleration To Stop * (TIME ^2))
+   *
+   * FUNCTION EQUALS
+   *     Target Acceleration To Stop = (Distance - Velocity_inital * TIME) / (.5 * (TIME ^ 2))
+   *
+   * Accleeration needed to stop will be a goal based function. seeing that the craft
+   * will always have a verying weight, the system will have to guess and check its
+   *
+   ***********************************************************************************/
+
+   /*
+   float tempOffsetDistance = Target_Goal - Current_Loaction;
+
+   float numerator = tempOffsetDistance - (current_Velocity * Asked_Time_To_Stop);
+   float denominator = .5 * UKismetMathLibrary::Square(Asked_Time_To_Stop);
+
+   float tempState = UKismetMathLibrary::SafeDivide(numerator, denominator);
+
+   return tempState;
+   */
+
+   FVector craftsRelativeOrgin = craft_Current_World_Space_Location;
+
+   // Split Each vector apart
+   float DistanceToTarget_x = 0;
+   return FVector(0.0f, 0.0f, 0.0f);
+
+}
+
+
+
+// CALLED EVERY TICK
+void Aflightinterface::synchronizeTargetAxisAndShipAxis()
+{
+   if (FlightData)
+   {
+      // Syronize the maprtmesh location and the ref target mush current axis location
+      shipsCurrentAxis->SetWorldLocation(parentMesh->GetComponentLocation()); 
+      worldCurrnetRefTargetAxis->SetWorldLocation(TargetSession->targetLocationLock);
+
+
+
+
+
+
+      // Set the target axis locationof the ship to that of the specified target location
+      //worldCurrnetRefTargetAxis->SetWorldLocation(FlightData->targetUniverseLocation, false, false);
+
+
+
+      // initlize transform variable
+      //GetCurrent Location of Ship
+      //FTransform passInTransform = FTransform(); 
+      //passInTransform.SetLocation(FVector(shipsCurrentAxis->GetComponentLocation())); // Set target location.
+
+
+      // Create rotation to 0,0,0
+      //FQuat passInQuat = UKismetMathLibrary::Conv_RotatorToQuaternion(FRotator(0.0, 0.0, 0.0));
+     //passInTransform.SetRotation(passInQuat);
+
+
+      // Create Scale qualt to 1,1,1
+     // passInTransform.SetScale3D(FVector(1.0, 1.0, 1.0));
+
+
+      //Creaee Inverse Transform Location.
+      //FVector tempStoreLocationVector = UKismetMathLibrary::InverseTransformLocation(passInTransform, FlightData->targetUniverseLocation);
+
+
+      // Create look at rotator for axis syncronization.
+      FRotator tempStoreRotator = parentMesh->GetComponentRotation();
+
+
+      //syncronization axis.
+      shipsCurrentAxis->SetWorldRotation(tempStoreRotator, false, false);
+      worldCurrnetRefTargetAxis->SetWorldRotation(tempStoreRotator, false, false);
+
+
+
+
+   }
+   else
+   {
+      UE_LOG(LogTemp, Warning, TEXT("Synchronize Target Axis And Ship Axis FAILED!!!"));
+   }
+}
 
 
 void Aflightinterface::sideThrustersSidePercentDistribution(float allotted_thrust_percentage /* Positive percent means craft moves from left-->Right. */, float alloted_DeadSpace)
@@ -464,29 +698,62 @@ void Aflightinterface::parentMeshAxisValues(USceneComponent* targetMeshToAnalyze
    {
       UPrimitiveComponent* primitaveMeshRef = Cast<UPrimitiveComponent>(targetMeshToAnalyze);
 
-      FlightData->initalTickVelocity_AcclerationCalulation =  targetMeshToAnalyze->GetComponentVelocity(); // Not used to retreve veloicty of each indivual axis.
+      ///* REFACTOR */
+
+
+
+        // Not used to retreve veloicty of each indivual axis.
       
+
+
+      
+
+      // Used For UNROTATING vectors
+      FRotator ShipCurrentWorldRoataion = targetMeshToAnalyze->GetComponentRotation();
+      FVector ShipCurrentVelocityInWorldSpace = targetMeshToAnalyze->GetComponentVelocity();
+      FVector ShipCurrentAngualrvelocityInWorldSpace = primitaveMeshRef->GetPhysicsAngularVelocityInDegrees(FName("none"));
+
+
+      FVector AccelertaionVelocity = UKismetMathLibrary::LessLess_VectorRotator(ShipCurrentVelocityInWorldSpace, ShipCurrentWorldRoataion);
+
 
       FlightData->worldSpaceLocation = targetMeshToAnalyze->GetComponentLocation();
 
-      FlightData->xAxisVelocity = targetMeshToAnalyze->GetComponentVelocity().X;
-      FlightData->yAxisVelocity = targetMeshToAnalyze->GetComponentVelocity().Y;
-      FlightData->zAxisVelocity = targetMeshToAnalyze->GetComponentVelocity().Z;
+
+
+      FlightData->initalTickVelocity_AcclerationCalulation = AccelertaionVelocity;
 
 
 
-      FlightData->xAxisRotationVelocity = primitaveMeshRef->GetPhysicsAngularVelocityInDegrees(FName("none")).X;
-      FlightData->yAxisRotationVelocity = primitaveMeshRef->GetPhysicsAngularVelocityInDegrees(FName("none")).Y;
-      FlightData->zAxisRotationVelocity = primitaveMeshRef->GetPhysicsAngularVelocityInDegrees(FName("none")).Z;
 
 
 
-      FlightData->xAxisAngle = targetMeshToAnalyze->GetComponentRotation().Roll;
-      FlightData->yAxisAngle = targetMeshToAnalyze->GetComponentRotation().Pitch;
-      FlightData->zAxisAngle = targetMeshToAnalyze->GetComponentRotation().Yaw;
+      // Calulate approperate Relative To Ship Axis Velocioty
+      FVector tempOutVelocity = UKismetMathLibrary::LessLess_VectorRotator(ShipCurrentVelocityInWorldSpace, ShipCurrentWorldRoataion);
+
+      // Calulate approperate Relative To Ship Axis Rotation Angular
+      FVector tempOutAngualrVelocity = UKismetMathLibrary::LessLess_VectorRotator(ShipCurrentAngualrvelocityInWorldSpace, ShipCurrentWorldRoataion);
 
 
-      ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      FlightData->xAxisVelocity = tempOutVelocity.X;
+      FlightData->yAxisVelocity = tempOutVelocity.Y;
+      FlightData->zAxisVelocity = tempOutVelocity.Z;
+
+
+
+      FlightData->xAxisRotationVelocity = tempOutAngualrVelocity.X;
+      FlightData->yAxisRotationVelocity = tempOutAngualrVelocity.Y;
+      FlightData->zAxisRotationVelocity = tempOutAngualrVelocity.Z;
+
+
+      //Relative To World Space
+      FlightData->xAxisAngle = ShipCurrentWorldRoataion.Roll;
+      FlightData->yAxisAngle = ShipCurrentWorldRoataion.Pitch;
+      FlightData->zAxisAngle = ShipCurrentWorldRoataion.Yaw;
+
+
+
       /* Start Calculations for finding each Axis current acceleration */
       FVector XY_Z = FlightData->initalTickVelocity_AcclerationCalulation - FlightData->PreviousTickVelocity_AcclerationCalulation;
       currentWorldDeltaTimeInVectorForm = FVector(UGameplayStatics::GetWorldDeltaSeconds(GetWorld()));
@@ -503,9 +770,9 @@ void Aflightinterface::parentMeshAxisValues(USceneComponent* targetMeshToAnalyze
 
 
       FlightData->PreviousTickVelocity_AcclerationCalulation = FlightData->initalTickVelocity_AcclerationCalulation;
-      /* End Calculations for finding each Axis current acceleration */
-      ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+      ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
       // Create Line trace Start And End points for calualtions
@@ -552,16 +819,16 @@ void Aflightinterface::parentMeshAxisValues(USceneComponent* targetMeshToAnalyze
 
 
      //FString output =
-     //   "XR: " + FString::SanitizeFloat(targetMeshFlightData->xAxisAngle, 5) +
-     //   "YR: " + FString::SanitizeFloat(targetMeshFlightData->yAxisAngle, 5) +
-     //   "ZR: " + FString::SanitizeFloat(targetMeshFlightData->zAxisAngle, 5);
+     //   "XR: " + FString::SanitizeFloat(FlightData->xAxisAngle, 5) +
+     //   "YR: " + FString::SanitizeFloat(FlightData->yAxisAngle, 5) +
+     //   "ZR: " + FString::SanitizeFloat(FlightData->zAxisAngle, 5);
      //UE_LOG(LogTemp, Warning, /*TEXT("XR: %f"),*/ TEXT("%s"), *output);
 
 
-      FString output =
-        "XR: " + FString::SanitizeFloat(FlightData->xAxisAcceleration, 5) +
-        "YR: " + FString::SanitizeFloat(FlightData->yAxisAcceleration, 5) +
-        "ZR: " + FString::SanitizeFloat(FlightData->zAxisAcceleration, 5);
+      //FString output =
+      //  "XR: " + FString::SanitizeFloat(FlightData->xAxisAcceleration, 5) +
+      //  "YR: " + FString::SanitizeFloat(FlightData->yAxisAcceleration, 5) +
+      //  "ZR: " + FString::SanitizeFloat(FlightData->zAxisAcceleration, 5);
      //UE_LOG(LogTemp, Warning, /*TEXT("XR: %f"),*/ TEXT("%s"), *output);
      // 
      // 
@@ -762,6 +1029,16 @@ void Aflightinterface::BradcastDelegateToWorld()
 //}
 
 
+
+// bind refrnce world and hsip axis for debuging
+void Aflightinterface::bindDebugRefreceTargetAxis(USceneComponent* ShipRefAxis, USceneComponent* targetTargetWorldAxis)
+{
+   if(ShipRefAxis)
+      shipsCurrentAxis = ShipRefAxis;
+   
+   if(targetTargetWorldAxis)
+      worldCurrnetRefTargetAxis = targetTargetWorldAxis;
+}
 
 
 void Aflightinterface::bindRequiredComponents(
