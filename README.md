@@ -15,11 +15,11 @@ The main work environments that were used to create this project were Unreal Eng
 
 * [Unreal Engine C++ API](https://docs.unrealengine.com/5.0/en-US/API/)
 * [GameDev](https://www.gamedev.tv/)
-* [Quaternion](https://en.wikipedia.org/wiki/Quaternion)
+* [Reinforcement learning](https://medium.datadriveninvestor.com/which-reinforcement-learning-rl-algorithm-to-use-where-when-and-in-what-scenario-e3e7617fb0b1)
 * [Kinematics](https://www.khanacademy.org/science/physics/one-dimensional-motion/kinematic-formulas/a/what-are-the-kinematic-formulas)
 
 # Future Work
 
-* Implement Reinforcement learning stabilization 
 * Object avoidance
-* Add directional control from the user
+* Add directional control for the user
+* Teach A.I. all 3 axis of stabilization
