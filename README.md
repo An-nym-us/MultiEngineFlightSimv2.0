@@ -6,7 +6,7 @@ Developed with Unreal Engine 5
 
 This project is a flight simulator that will take advantage of Deep Reinforcement learning to help improve flight hovering and response to environmental conditions. This will utilize the Unreal Engine 5 physics engine and workspace to simulate an accurate full flight system. Future versions will include object avoidance and full axis control to improve its realism within the simulation. 
 
-[Software Demo Video](https://www.loom.com/share/3b98fe545f464546839c9480ed1c0d08)
+[Software Demo Video](https://www.loom.com/share/a1c6aaf452aa4aa784c24e1c407b6f2d)
 
 # Development Environment
 The main work environments that were used to create this project were Unreal Engine 5.0.2, and visual studio 2022. There were no external libraries used as of right now in this current version of this project but utilized all of the Unreal Engine libraries. 
