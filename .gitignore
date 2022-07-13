@@ -12,3 +12,4 @@ Saved
 *.suo
 *.xcodeproj
 *.xcworkspace
+Content/MindMaker/dist/mindmaker/_pywrap_tensorflow_internal.pyd
