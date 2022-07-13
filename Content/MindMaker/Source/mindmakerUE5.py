@@ -1,4 +1,4 @@
-F#(c) Copywrite 2020 Aaron Krumins
+#(c) Copywrite 2020 Aaron Krumins
 
 # set async_mode to 'threading', 'eventlet', 'gevent' or 'gevent_uwsgi' to
 # force a mode else, the best mode is selected automatically from what's
@@ -21,7 +21,7 @@ import operator
 import sys
 import os
 
-from gym import spaces
+
 from random import randint
 
 from threading import Timer
