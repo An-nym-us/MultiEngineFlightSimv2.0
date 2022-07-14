@@ -280,7 +280,7 @@ def receive(sid, data):
         runner = runner = Runner(loadAgent, env,max_episode_timesteps = max_episode_timestep)   
         
         print("Running Evaluation Mode...")
-        runner.run(num_episodes = 100, evaluation = True)
+        runner.run(num_episodes = 250, evaluation = True)
         
         print("Evaluation Complete!!!")
         exitprogramCountdown = 10
@@ -331,7 +331,17 @@ def receive(sid, data):
             tracking=None, 
             recorder=None
             '''
-            #policy= [dict(type='dense', size=1024, activation='tanh'), dict(type='dense', size=2048, activation='tanh')  ,dict(type='dense', size=2048, activation='tanh'), dict(type='dense', size=1024, activation='tanh')]
+            #policy= [
+                # dict(type='dense', size=2048, activation='tanh'), 
+                # dict(type='dense', size=2048, activation='tanh'),
+                # dict(type='dense', size=4096, activation='tanh'), 
+                # dict(type='dense', size=4096, activation='tanh'), 
+                # dict(type='dense', size=4096, activation='tanh'),
+                # dict(type='dense', size=4096, activation='tanh'),
+                # dict(type='dense', size=2048, activation='tanh'), 
+                # dict(type='dense', size=4096, activation='tanh'),
+                # dict(type='dense', size=2048, activation='tanh'), 
+                # dict(type='dense', size=1024, activation='tanh')]
             
 
             #Check if file already exists
